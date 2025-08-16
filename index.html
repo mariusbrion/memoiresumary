@@ -487,8 +487,11 @@
                         const end = Math.min(article.text.length, match.index + match[0].length + 200);
                         const excerpt = article.text.substring(start, end);
                         
-                        // Éviter les doublons
-                        if (!excerpts.some(e => e.includes(excerpt.substring(50, 150)))) {
+                        // Éviter les doublons en comparant les textes des extraits
+                        const excerptSample = excerpt.substring(50, Math.min(150, excerpt.length));
+                        const isDuplicate = excerpts.some(e => e.text.includes(excerptSample) || excerptSample.includes(e.text.substring(50, Math.min(150, e.text.length))));
+                        
+                        if (!isDuplicate) {
                             excerpts.push({
                                 text: excerpt,
                                 matchIndex: match.index - start,
