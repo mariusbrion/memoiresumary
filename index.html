@@ -291,7 +291,7 @@
                 <h2>⚙️ Configuration API Groq</h2>
                 <div class="form-group">
                     <label for="groqApiKey">Clé API Groq :</label>
-                    <input type="password" id="groqApiKey" placeholder="Collez votre clé API Groq ici...">
+                    <input type="password" id="groqApiKey" placeholder="Collez votre clé API Groq ici..." onchange="saveApiKey(this.value)">
                 </div>
             </div>
 
@@ -342,21 +342,87 @@
 
     <script>
         // ===== GESTION DES DONNÉES =====
-        // Stockage en mémoire (remplace localStorage pour cette démo)
+        // Stockage persistant avec fallback en mémoire
         let articlesData = [];
+        let groqApiKey = '';
         
-        // Fonction pour sauvegarder (adaptez pour localStorage si nécessaire)
+        // Fonction pour sauvegarder
         function saveArticles() {
-            // En production, utilisez : localStorage.setItem('articles', JSON.stringify(articlesData));
-            console.log('Articles sauvegardés:', articlesData);
+            try {
+                // Tentative d'utilisation de localStorage
+                if (typeof(Storage) !== "undefined" && localStorage) {
+                    localStorage.setItem('academic_articles', JSON.stringify(articlesData));
+                    console.log('Articles sauvegardés dans localStorage');
+                } else {
+                    // Fallback : sauvegarde dans un cookie
+                    const dataStr = JSON.stringify(articlesData);
+                    if (dataStr.length < 4000) { // Limite des cookies
+                        document.cookie = `academic_articles=${encodeURIComponent(dataStr)}; expires=${new Date(Date.now() + 365*24*60*60*1000).toUTCString()}; path=/`;
+                        console.log('Articles sauvegardés dans un cookie');
+                    } else {
+                        console.log('Articles trop volumineux pour être sauvegardés');
+                    }
+                }
+            } catch (e) {
+                console.log('Sauvegarde en mémoire uniquement:', e.message);
+            }
         }
         
-        // Fonction pour charger (adaptez pour localStorage si nécessaire)
+        // Fonction pour charger
         function loadArticles() {
-            // En production, utilisez : 
-            // const saved = localStorage.getItem('articles');
-            // return saved ? JSON.parse(saved) : [];
+            try {
+                // Tentative de chargement depuis localStorage
+                if (typeof(Storage) !== "undefined" && localStorage) {
+                    const saved = localStorage.getItem('academic_articles');
+                    if (saved) {
+                        articlesData = JSON.parse(saved);
+                        console.log('Articles chargés depuis localStorage');
+                        return articlesData;
+                    }
+                }
+                
+                // Fallback : chargement depuis les cookies
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    const [name, value] = cookie.trim().split('=');
+                    if (name === 'academic_articles') {
+                        articlesData = JSON.parse(decodeURIComponent(value));
+                        console.log('Articles chargés depuis un cookie');
+                        return articlesData;
+                    }
+                }
+            } catch (e) {
+                console.log('Erreur lors du chargement:', e.message);
+            }
+            
             return articlesData;
+        }
+        
+        // Sauvegarde de la clé API
+        function saveApiKey(key) {
+            groqApiKey = key;
+            try {
+                if (typeof(Storage) !== "undefined" && localStorage) {
+                    localStorage.setItem('groq_api_key', key);
+                }
+            } catch (e) {
+                console.log('Clé API sauvegardée en mémoire uniquement');
+            }
+        }
+        
+        // Chargement de la clé API
+        function loadApiKey() {
+            try {
+                if (typeof(Storage) !== "undefined" && localStorage) {
+                    const saved = localStorage.getItem('groq_api_key');
+                    if (saved) {
+                        groqApiKey = saved;
+                        document.getElementById('groqApiKey').value = saved;
+                    }
+                }
+            } catch (e) {
+                console.log('Clé API non chargée');
+            }
         }
 
         // ===== GESTION DES ARTICLES =====
@@ -556,59 +622,108 @@
             searchResults.appendChild(loadingDiv);
 
             try {
-                // Préparer le texte pour Groq
+                // Préparer le texte pour Groq (limiter la taille)
                 const extractedText = results.map(result => {
-                    const articleInfo = `Article: "${result.article.title}"${result.article.url ? `\nURL: ${result.article.url}` : ''}\n`;
-                    const excerpts = result.excerpts.map(excerpt => excerpt.text).join('\n\n');
+                    const articleInfo = `Article: "${result.article.title}"${result.article.url ? `\nURL: ${result.article.url}` : ''}\n\n`;
+                    const excerpts = result.excerpts
+                        .map(excerpt => excerpt.text.trim())
+                        .slice(0, 2) // Limiter à 2 extraits par article
+                        .join('\n\n');
                     return articleInfo + excerpts;
-                }).join('\n\n---\n\n');
+                }).slice(0, 3) // Limiter à 3 articles maximum
+                .join('\n\n---\n\n');
+
+                // Limiter la taille totale du texte
+                const maxTextLength = 8000;
+                const finalText = extractedText.length > maxTextLength 
+                    ? extractedText.substring(0, maxTextLength) + '\n\n[...texte tronqué...]'
+                    : extractedText;
+
+                const requestBody = {
+                    model: "llama-3.1-70b-versatile",
+                    messages: [
+                        { 
+                            role: "system", 
+                            content: "Tu es un assistant de recherche académique expert. Analyse les passages fournis et génère un résumé structuré avec des citations. Sois concis et précis. Utilise le format : **RÉSUMÉ**, **POINTS CLÉS**, **SUGGESTIONS DE CITATIONS**." 
+                        },
+                        { 
+                            role: "user", 
+                            content: `Recherche sur le thème : "${query}"\n\nPassages trouvés :\n${finalText}\n\nGénère un résumé académique avec suggestions de citations.`
+                        }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 1000,
+                    top_p: 1,
+                    stream: false
+                };
+
+                console.log('Requête Groq:', requestBody); // Debug
 
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": "Bearer " + apiKey,
+                        "Authorization": `Bearer ${apiKey}`,
                     },
-                    body: JSON.stringify({
-                        model: "llama-3.1-70b-versatile",
-                        messages: [
-                            { 
-                                role: "system", 
-                                content: "Tu es un assistant de recherche académique expert. Analyse les passages fournis et génère un résumé structuré avec des citations en style APA 7. Formate ta réponse avec des sections claires : RÉSUMÉ, POINTS CLÉS, et CITATIONS." 
-                            },
-                            { 
-                                role: "user", 
-                                content: `Recherche sur : "${query}"\n\nPassages trouvés :\n${extractedText}\n\nGénère un résumé académique avec citations APA appropriées.`
-                            }
-                        ],
-                        temperature: 0.7,
-                        max_tokens: 1500
-                    }),
+                    body: JSON.stringify(requestBody),
                 });
+
+                console.log('Statut réponse:', response.status); // Debug
+
+                const responseData = await response.json();
+                console.log('Réponse complète:', responseData); // Debug
 
                 loadingDiv.remove();
 
                 if (!response.ok) {
-                    throw new Error(`Erreur API: ${response.status} ${response.statusText}`);
+                    let errorMessage = `Erreur API Groq (${response.status})`;
+                    if (responseData.error) {
+                        errorMessage += `: ${responseData.error.message || responseData.error.type || 'Erreur inconnue'}`;
+                    }
+                    throw new Error(errorMessage);
                 }
 
-                const data = await response.json();
-                const summary = data.choices[0].message.content;
+                if (!responseData.choices || !responseData.choices[0] || !responseData.choices[0].message) {
+                    throw new Error('Réponse API invalide : pas de contenu trouvé');
+                }
 
-                // Afficher le résumé
+                const summary = responseData.choices[0].message.content;
+
+                // Afficher le résumé avec formatage amélioré
                 const summaryDiv = document.createElement('div');
                 summaryDiv.className = 'groq-summary';
                 summaryDiv.innerHTML = `
                     <h3>🤖 Résumé généré par Groq</h3>
-                    <div class="groq-content">${escapeHtml(summary)}</div>
+                    <div class="groq-content">${formatGroqResponse(summary)}</div>
                 `;
                 searchResults.appendChild(summaryDiv);
 
             } catch (error) {
                 loadingDiv.remove();
-                console.error('Erreur Groq:', error);
-                showMessage(searchResults, `Erreur lors de la génération du résumé: ${error.message}`, 'error');
+                console.error('Erreur complète Groq:', error);
+                
+                let userMessage = 'Erreur lors de la génération du résumé: ';
+                if (error.message.includes('401')) {
+                    userMessage += 'Clé API invalide. Vérifiez votre clé Groq.';
+                } else if (error.message.includes('429')) {
+                    userMessage += 'Limite de taux dépassée. Attendez un moment avant de réessayer.';
+                } else if (error.message.includes('400')) {
+                    userMessage += 'Requête invalide. Le texte est peut-être trop long.';
+                } else {
+                    userMessage += error.message;
+                }
+                
+                showMessage(searchResults, userMessage, 'error');
             }
+        }
+
+        // Formater la réponse de Groq
+        function formatGroqResponse(text) {
+            return escapeHtml(text)
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/^/, '<p>')
+                .replace(/$/, '</p>');
         }
 
         // ===== FONCTIONS UTILITAIRES =====
@@ -660,8 +775,16 @@
 
         // ===== INITIALISATION =====
         document.addEventListener('DOMContentLoaded', function() {
+            // Charger les données existantes
+            loadArticles();
+            loadApiKey();
             displayArticles();
             console.log('Mini Moteur de Recherche Académique initialisé');
+            
+            // Afficher le statut de sauvegarde
+            const storageStatus = typeof(Storage) !== "undefined" && localStorage ? 
+                'localStorage disponible' : 'Sauvegarde via cookies uniquement';
+            console.log('Statut de sauvegarde:', storageStatus);
         });
     </script>
 </body>
