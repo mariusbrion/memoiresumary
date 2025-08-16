@@ -197,6 +197,40 @@
             font-weight: 600;
         }
 
+        .expand-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .expand-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .expanded-context {
+            background: #e8f4f8;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+            font-style: normal;
+            border-left: 3px solid #17a2b8;
+        }
+
+        .context-label {
+            font-size: 0.85rem;
+            color: #007bff;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
         .groq-summary {
             background: #d4edda;
             border: 1px solid #c3e6cb;
@@ -363,13 +397,11 @@
                 name: 'Groq',
                 endpoint: 'https://api.groq.com/openai/v1/chat/completions',
                 models: [
-                    'llama-3.2-90b-text-preview',
-                    'llama-3.2-11b-text-preview', 
-                    'llama3-groq-70b-8192-tool-use-preview',
-                    'llama3-70b-8192',
-                    'mixtral-8x7b-32768'
+                    'llama-3.3-70b-versatile',
+                    'llama3-70b-8192', 
+                    'llama-3.1-8b-instant'
                 ],
-                info: '🚀 <strong>Groq :</strong> API gratuite très rapide. Parfait pour commencer !<br>📝 Créez un compte sur <a href="https://console.groq.com" target="_blank">console.groq.com</a>'
+                info: '🚀 <strong>Groq :</strong> API gratuite très rapide. Parfait pour commencer !<br>📝 Créez un compte sur <a href="https://console.groq.com" target="_blank">console.groq.com</a><br>💡 <strong>llama-3.3-70b-versatile</strong> : idéal pour résumés et citations APA<br>💡 <strong>llama-3.1-8b-instant</strong> : parfait pour recherche rapide'
             },
             openai: {
                 name: 'OpenAI',
@@ -629,7 +661,6 @@
 
             articles.forEach(article => {
                 const excerpts = [];
-                const text = article.text.toLowerCase();
                 
                 keywords.forEach(keyword => {
                     const regex = new RegExp(`\\b${escapeRegex(keyword)}\\w*`, 'gi');
@@ -645,10 +676,17 @@
                         const isDuplicate = excerpts.some(e => e.text.includes(excerptSample) || excerptSample.includes(e.text.substring(50, Math.min(150, e.text.length))));
                         
                         if (!isDuplicate) {
+                            // Ajouter plus de contexte pour l'expansion
+                            const expandedStart = Math.max(0, match.index - 500);
+                            const expandedEnd = Math.min(article.text.length, match.index + match[0].length + 500);
+                            const expandedExcerpt = article.text.substring(expandedStart, expandedEnd);
+                            
                             excerpts.push({
                                 text: excerpt,
+                                expandedText: expandedExcerpt,
                                 matchIndex: match.index - start,
-                                keyword: match[0]
+                                keyword: match[0],
+                                originalIndex: match.index // Position dans le texte original
                             });
                         }
                     }
@@ -672,15 +710,23 @@
                 return;
             }
 
-            const resultsHtml = results.map(result => `
+            const resultsHtml = results.map((result, resultIndex) => `
                 <div class="search-result">
                     <h4>${escapeHtml(result.article.title)}</h4>
                     ${result.article.url ? `<a href="${escapeHtml(result.article.url)}" target="_blank">${escapeHtml(result.article.url)}</a>` : ''}
-                    ${result.excerpts.map(excerpt => `
-                        <div class="search-excerpt">
-                            ${highlightKeywords(escapeHtml(excerpt.text), query)}
-                        </div>
-                    `).join('')}
+                    ${result.excerpts.map((excerpt, excerptIndex) => {
+                        const excerptId = `excerpt_${resultIndex}_${excerptIndex}`;
+                        return `
+                            <div class="search-excerpt">
+                                ${highlightKeywords(escapeHtml(excerpt.text), query)}
+                                <button class="expand-btn" onclick="toggleContext('${excerptId}')">👁️ Voir plus</button>
+                                <div id="${excerptId}" class="expanded-context" style="display: none;">
+                                    <div class="context-label">📖 Contexte élargi :</div>
+                                    ${highlightKeywords(escapeHtml(excerpt.expandedText), query)}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
             `).join('');
 
@@ -688,6 +734,22 @@
                 <h3>Résultats de recherche (${results.length} article(s) trouvé(s)) :</h3>
                 ${resultsHtml}
             `;
+        }
+
+        // Fonction pour basculer l'affichage du contexte élargi
+        function toggleContext(excerptId) {
+            const contextDiv = document.getElementById(excerptId);
+            const btn = contextDiv.previousElementSibling;
+            
+            if (contextDiv.style.display === 'none') {
+                contextDiv.style.display = 'block';
+                btn.innerHTML = '👁️ Voir moins';
+                btn.style.background = '#e74c3c';
+            } else {
+                contextDiv.style.display = 'none';
+                btn.innerHTML = '👁️ Voir plus';
+                btn.style.background = '#3498db';
+            }
         }
 
         // ===== INTÉGRATION IA MULTI-PROVIDERS =====
