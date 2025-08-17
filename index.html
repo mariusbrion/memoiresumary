@@ -663,8 +663,12 @@
                 const excerpts = [];
                 
                 keywords.forEach(keyword => {
-                    const regex = new RegExp(`\\b${escapeRegex(keyword)}\\w*`, 'gi');
+                    // Utiliser la regex insensible aux accents
+                    const regex = createAccentInsensitiveRegex(keyword);
                     let match;
+                    
+                    // Reset regex pour chaque article
+                    regex.lastIndex = 0;
                     
                     while ((match = regex.exec(article.text)) !== null) {
                         const start = Math.max(0, match.index - 200);
@@ -673,7 +677,11 @@
                         
                         // Éviter les doublons en comparant les textes des extraits
                         const excerptSample = excerpt.substring(50, Math.min(150, excerpt.length));
-                        const isDuplicate = excerpts.some(e => e.text.includes(excerptSample) || excerptSample.includes(e.text.substring(50, Math.min(150, e.text.length))));
+                        const isDuplicate = excerpts.some(e => {
+                            const existingSample = e.text.substring(50, Math.min(150, e.text.length));
+                            return normalizeText(excerptSample).includes(normalizeText(existingSample)) || 
+                                   normalizeText(existingSample).includes(normalizeText(excerptSample));
+                        });
                         
                         if (!isDuplicate) {
                             // Ajouter plus de contexte pour l'expansion
@@ -688,6 +696,11 @@
                                 keyword: match[0],
                                 originalIndex: match.index // Position dans le texte original
                             });
+                        }
+                        
+                        // Éviter les boucles infinites avec regex globale
+                        if (match.index === regex.lastIndex) {
+                            regex.lastIndex++;
                         }
                     }
                 });
@@ -908,6 +921,14 @@
         }
 
         function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\        // ===== FONCTIONS UTILITAIRES =====
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeRegex(string) {
             return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
@@ -918,6 +939,76 @@
             keywords.forEach(keyword => {
                 const regex = new RegExp(`(\\b${escapeRegex(keyword)}\\w*)`, 'gi');
                 highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+            });
+            
+            return highlightedText;
+        }');
+        }
+
+        // Normaliser le texte (supprimer les accents et mettre en minuscules)
+        function normalizeText(text) {
+            return text
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, ''); // Supprime les accents
+        }
+
+        // Créer une regex insensible aux accents
+        function createAccentInsensitiveRegex(keyword) {
+            const normalized = normalizeText(keyword);
+            
+            // Créer un pattern qui accepte les lettres avec ou sans accents
+            const accentMap = {
+                'a': '[aàáâãäåæ]',
+                'e': '[eèéêë]',
+                'i': '[iìíîï]',
+                'o': '[oòóôõöø]',
+                'u': '[uùúûü]',
+                'c': '[cç]',
+                'n': '[nñ]',
+                'y': '[yÿ]'
+            };
+            
+            let pattern = '';
+            for (let char of normalized) {
+                if (accentMap[char]) {
+                    pattern += accentMap[char];
+                } else {
+                    pattern += escapeRegex(char);
+                }
+            }
+            
+            return new RegExp(`\\b${pattern}\\w*`, 'gi');
+        }
+
+        function highlightKeywords(text, query) {
+            const keywords = query.split(/\s+/).filter(k => k.length > 2);
+            let highlightedText = text;
+            
+            keywords.forEach(keyword => {
+                const regex = createAccentInsensitiveRegex(keyword);
+                highlightedText = highlightedText.replace(regex, '<span class="highlight">        // ===== FONCTIONS UTILITAIRES =====
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        function highlightKeywords(text, query) {
+            const keywords = query.split(/\s+/).filter(k => k.length > 2);
+            let highlightedText = text;
+            
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`(\\b${escapeRegex(keyword)}\\w*)`, 'gi');
+                highlightedText = highlightedText.replace(regex, '<span class="highlight">$1</span>');
+            });
+            
+            return highlightedText;
+        }</span>');
             });
             
             return highlightedText;
