@@ -390,11 +390,7 @@
     </div>
 
     <script>
-        // ===== FONCTIONS UTILITAIRES (AJOUTÉES/CORRIGÉES) =====
-
-        /**
-         * Échappe les caractères HTML spéciaux pour éviter les injections XSS.
-         */
+        // ===== FONCTIONS UTILITAIRES =====
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>"']/g, function(match) {
@@ -408,65 +404,39 @@
             });
         }
         
-        /**
-         * Affiche un message (erreur ou succès) dans un élément donné.
-         */
         function showMessage(element, message, type) {
             element.innerHTML = `<div class="${type}">${escapeHtml(message)}</div>`;
         }
 
-        /**
-         * NOUVEAU : Supprime les accents d'une chaîne de caractères.
-         * C'est la clé pour rendre la recherche insensible aux accents.
-         */
         function removeAccents(str) {
             if (!str) return '';
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // ===== GESTION DES FOURNISSEURS D'IA (INCHANGÉ) =====
+        // ===== GESTION DES FOURNISSEURS D'IA =====
         const aiProviders = {
             groq: {
                 name: 'Groq',
                 endpoint: 'https://api.groq.com/openai/v1/chat/completions',
-                models: [
-                    'llama-3.3-70b-versatile',
-                    'llama3-70b-8192', 
-                    'llama-3.1-8b-instant'
-                ],
-                info: '🚀 <strong>Groq :</strong> API gratuite très rapide. Parfait pour commencer !<br>📝 Créez un compte sur <a href="https://console.groq.com" target="_blank">console.groq.com</a><br>💡 <strong>llama-3.3-70b-versatile</strong> : idéal pour résumés et citations APA<br>💡 <strong>llama-3.1-8b-instant</strong> : parfait pour recherche rapide'
+                models: ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'llama-3.1-8b-instant'],
+                info: '🚀 <strong>Groq :</strong> API gratuite très rapide. Parfait pour commencer !<br>📝 Créez un compte sur <a href="https://console.groq.com" target="_blank">console.groq.com</a>'
             },
             openai: {
                 name: 'OpenAI',
                 endpoint: 'https://api.openai.com/v1/chat/completions',
-                models: [
-                    'gpt-4o',
-                    'gpt-4o-mini',
-                    'gpt-4-turbo',
-                    'gpt-3.5-turbo'
-                ],
+                models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
                 info: '🧠 <strong>OpenAI :</strong> Modèles GPT très performants (payant).<br>📝 Obtenez une clé sur <a href="https://platform.openai.com" target="_blank">platform.openai.com</a>'
             },
             anthropic: {
                 name: 'Anthropic',
                 endpoint: 'https://api.anthropic.com/v1/messages',
-                models: [
-                    'claude-3-5-sonnet-20240620',
-                    'claude-3-opus-20240229',
-                    'claude-3-sonnet-20240229',
-                    'claude-3-haiku-20240307'
-                ],
+                models: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307'],
                 info: '🎓 <strong>Anthropic :</strong> Claude excelle en recherche académique (payant).<br>📝 Obtenez une clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>'
             },
             together: {
                 name: 'Together AI',
                 endpoint: 'https://api.together.xyz/v1/chat/completions',
-                models: [
-                    'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
-                    'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-                    'mistralai/Mixtral-8x7B-Instruct-v0.1',
-                    'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
-                ],
+                models: ['meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo', 'mistralai/Mixtral-8x7B-Instruct-v0.1'],
                 info: '🔓 <strong>Together AI :</strong> Modèles open source performants (payant mais moins cher).<br>📝 Créez un compte sur <a href="https://api.together.xyz" target="_blank">api.together.xyz</a>'
             }
         };
@@ -485,18 +455,15 @@
             });
             
             infoDiv.innerHTML = aiProviders[provider].info;
-            
             loadApiKey();
         }
         
-        // ===== GESTION DES DONNÉES (INCHANGÉ) =====
+        // ===== GESTION DES DONNÉES =====
         let articlesData = [];
         
         function saveArticles() {
             try {
-                if (typeof(Storage) !== "undefined" && localStorage) {
-                    localStorage.setItem('academic_articles', JSON.stringify(articlesData));
-                }
+                localStorage.setItem('academic_articles', JSON.stringify(articlesData));
             } catch (e) {
                 console.error('Sauvegarde impossible:', e.message);
             }
@@ -504,16 +471,14 @@
         
         function loadArticles() {
             try {
-                if (typeof(Storage) !== "undefined" && localStorage) {
-                    const saved = localStorage.getItem('academic_articles');
-                    if (saved) {
-                        articlesData = JSON.parse(saved);
-                        return articlesData;
-                    }
+                const saved = localStorage.getItem('academic_articles');
+                if (saved) {
+                    articlesData = JSON.parse(saved);
+                    return articlesData;
                 }
             } catch (e) {
                 console.error('Erreur lors du chargement:', e.message);
-                localStorage.removeItem('academic_articles'); // Clear corrupted data
+                localStorage.removeItem('academic_articles');
             }
             return articlesData;
         }
@@ -521,9 +486,7 @@
         function saveApiKey(key) {
             const provider = document.getElementById('aiProvider').value;
             try {
-                if (typeof(Storage) !== "undefined" && localStorage) {
-                    localStorage.setItem(`api_key_${provider}`, key);
-                }
+                localStorage.setItem(`api_key_${provider}`, key);
             } catch (e) {
                 console.error('Sauvegarde de la clé API impossible');
             }
@@ -532,19 +495,14 @@
         function loadApiKey() {
             const provider = document.getElementById('aiProvider').value;
             try {
-                if (typeof(Storage) !== "undefined" && localStorage) {
-                    const saved = localStorage.getItem(`api_key_${provider}`);
-                    document.getElementById('apiKey').value = saved || '';
-                    return saved || '';
-                }
+                const saved = localStorage.getItem(`api_key_${provider}`);
+                document.getElementById('apiKey').value = saved || '';
             } catch (e) {
                  console.error('Chargement de la clé API impossible');
             }
-            document.getElementById('apiKey').value = '';
-            return '';
         }
 
-        // ===== GESTION DES ARTICLES (INCHANGÉ) =====
+        // ===== GESTION DES ARTICLES =====
         const articleForm = document.getElementById('articleForm');
         const articlesList = document.getElementById('articlesList');
         const articleCount = document.getElementById('articleCount');
@@ -552,41 +510,28 @@
 
         articleForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const title = document.getElementById('articleTitle').value.trim();
             const url = document.getElementById('articleUrl').value.trim();
             const text = document.getElementById('articleText').value.trim();
-            
             if (!title || !text) {
                 showMessage(addArticleMessage, 'Veuillez remplir le titre et le texte de l\'article.', 'error');
                 return;
             }
-            
-            const article = {
-                id: Date.now(),
-                title: title,
-                url: url || '',
-                text: text,
-                dateAdded: new Date().toLocaleDateString('fr-FR')
-            };
-            
+            const article = { id: Date.now(), title, url, text, dateAdded: new Date().toLocaleDateString('fr-FR') };
             articlesData.push(article);
             saveArticles();
             displayArticles();
             articleForm.reset();
-            
             showMessage(addArticleMessage, 'Article ajouté avec succès !', 'success');
         });
 
         function displayArticles() {
             const articles = loadArticles();
             articleCount.textContent = articles.length;
-            
             if (articles.length === 0) {
                 articlesList.innerHTML = '<div class="no-results">Aucun article ajouté pour le moment.</div>';
                 return;
             }
-            
             articlesList.innerHTML = articles.map(article => `
                 <div class="article-item">
                     <div class="article-title">${escapeHtml(article.title)}</div>
@@ -606,109 +551,72 @@
             }
         }
 
-        // ===== FONCTIONS DE RECHERCHE (MODIFIÉES) =====
+        // ===== FONCTIONS DE RECHERCHE =====
         const searchQuery = document.getElementById('searchQuery');
         const searchBtn = document.getElementById('searchBtn');
         const searchWithGroqBtn = document.getElementById('searchWithGroqBtn');
         const searchResults = document.getElementById('searchResults');
 
-        searchBtn.addEventListener('click', function() {
-            performSearch(false);
-        });
+        searchBtn.addEventListener('click', () => performSearch(false));
+        searchWithGroqBtn.addEventListener('click', () => performSearch(true));
+        searchQuery.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(false); });
 
-        searchWithGroqBtn.addEventListener('click', function() {
-            performSearch(true);
-        });
-
-        searchQuery.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                performSearch(false);
-            }
-        });
-
-        function performSearch(useGroq) {
-            // On ne met plus la query en minuscule ici, pour la préserver pour l'affichage
+        function performSearch(useAI) {
             const query = searchQuery.value.trim();
             if (!query) {
                 showMessage(searchResults, 'Veuillez saisir des mots-clés pour la recherche.', 'error');
                 return;
             }
-
             const articles = loadArticles();
             if (articles.length === 0) {
                 showMessage(searchResults, 'Aucun article disponible pour la recherche.', 'error');
                 return;
             }
-
             const results = searchInArticles(articles, query);
             displaySearchResults(results, query);
-
-            if (useGroq && results.length > 0) {
+            if (useAI && results.length > 0) {
                 generateAISummary(results, query);
             }
         }
 
-        /**
-         * CORRIGÉ : Cherche dans les articles en ignorant les accents et la casse.
-         */
         function searchInArticles(articles, query) {
-            const queryKeywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2);
-            const normalizedQueryKeywords = queryKeywords.map(removeAccents);
+            const normalizedQueryKeywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
             const results = [];
-
             articles.forEach(article => {
                 const excerpts = [];
-                // Regex pour trouver tous les mots (y compris avec accents)
                 const wordRegex = /\b[\wÀ-ÿ']+\b/g;
                 let wordMatch;
-
                 while ((wordMatch = wordRegex.exec(article.text)) !== null) {
                     const word = wordMatch[0];
                     const normalizedWord = removeAccents(word.toLowerCase());
-
-                    // Vérifie si le mot normalisé du texte correspond à un mot-clé normalisé
                     for (const normalizedKeyword of normalizedQueryKeywords) {
                         if (normalizedWord.startsWith(normalizedKeyword)) {
                             const matchIndex = wordMatch.index;
-
-                            const start = Math.max(0, matchIndex - 150);
-                            const end = Math.min(article.text.length, matchIndex + word.length + 150);
-                            const excerptText = article.text.substring(start, end);
-
-                            // Simple check to avoid very similar excerpts
                             if (!excerpts.some(e => e.originalIndex > matchIndex - 50 && e.originalIndex < matchIndex + 50)) {
+                                const start = Math.max(0, matchIndex - 150);
+                                const end = Math.min(article.text.length, matchIndex + word.length + 150);
                                 const expandedStart = Math.max(0, matchIndex - 400);
                                 const expandedEnd = Math.min(article.text.length, matchIndex + word.length + 400);
-
                                 excerpts.push({
-                                    text: excerptText,
+                                    text: article.text.substring(start, end),
                                     expandedText: article.text.substring(expandedStart, expandedEnd),
                                     originalIndex: matchIndex
                                 });
                             }
-                            break; // Passe au mot suivant de l'article
+                            break;
                         }
                     }
                 }
-
                 if (excerpts.length > 0) {
-                    results.push({
-                        article: article,
-                        excerpts: excerpts.slice(0, 3) // Limiter à 3 extraits par article
-                    });
+                    results.push({ article, excerpts: excerpts.slice(0, 3) });
                 }
             });
             return results;
         }
 
-        /**
-         * NOUVEAU : Surligne les mots-clés dans un texte, en ignorant les accents.
-         */
         function highlightKeywords(text, query) {
-            const queryKeywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2);
-            const normalizedQueryKeywords = queryKeywords.map(removeAccents);
+            const normalizedQueryKeywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
             if (normalizedQueryKeywords.length === 0) return text;
-
             const wordRegex = /[\wÀ-ÿ']+/g;
             return text.replace(wordRegex, (word) => {
                 const normalizedWord = removeAccents(word.toLowerCase());
@@ -721,54 +629,37 @@
             });
         }
         
-        // Fonction d'affichage (utilise maintenant highlightKeywords)
         function displaySearchResults(results, query) {
             if (results.length === 0) {
                 searchResults.innerHTML = '<div class="no-results">Aucun résultat trouvé pour votre recherche.</div>';
                 return;
             }
-
             const resultsHtml = results.map((result, resultIndex) => `
                 <div class="search-result">
                     <h4>${escapeHtml(result.article.title)}</h4>
                     ${result.article.url ? `<a href="${escapeHtml(result.article.url)}" target="_blank">${escapeHtml(result.article.url)}</a>` : ''}
-                    ${result.excerpts.map((excerpt, excerptIndex) => {
-                        const excerptId = `excerpt_${resultIndex}_${excerptIndex}`;
-                        return `
-                            <div class="search-excerpt">
-                                ...${highlightKeywords(escapeHtml(excerpt.text), query)}...
-                                <button class="expand-btn" onclick="toggleContext('${excerptId}', this)">👁️ Voir plus</button>
-                                <div id="${excerptId}" class="expanded-context" style="display: none;">
-                                    <div class="context-label">📖 Contexte élargi :</div>
-                                    ...${highlightKeywords(escapeHtml(excerpt.expandedText), query)}...
-                                </div>
+                    ${result.excerpts.map((excerpt, excerptIndex) => `
+                        <div class="search-excerpt">
+                            ...${highlightKeywords(escapeHtml(excerpt.text), query)}...
+                            <button class="expand-btn" onclick="toggleContext('excerpt_${resultIndex}_${excerptIndex}', this)">👁️ Voir plus</button>
+                            <div id="excerpt_${resultIndex}_${excerptIndex}" class="expanded-context" style="display: none;">
+                                <div class="context-label">📖 Contexte élargi :</div>
+                                ...${highlightKeywords(escapeHtml(excerpt.expandedText), query)}...
                             </div>
-                        `;
-                    }).join('')}
-                </div>
-            `).join('');
-
-            searchResults.innerHTML = `
-                <h3>Résultats de recherche (${results.length} article(s) trouvé(s)) :</h3>
-                ${resultsHtml}
-                <div id="aiSummaryContainer"></div>
-            `;
+                        </div>`).join('')}
+                </div>`).join('');
+            searchResults.innerHTML = `<h3>Résultats de recherche (${results.length} article(s) trouvé(s)) :</h3>${resultsHtml}<div id="aiSummaryContainer"></div>`;
         }
 
         function toggleContext(excerptId, btn) {
             const contextDiv = document.getElementById(excerptId);
-            if (contextDiv.style.display === 'none') {
-                contextDiv.style.display = 'block';
-                btn.innerHTML = '👁️ Voir moins';
-                btn.style.background = '#e74c3c';
-            } else {
-                contextDiv.style.display = 'none';
-                btn.innerHTML = '👁️ Voir plus';
-                btn.style.background = '#3498db';
-            }
+            const isHidden = contextDiv.style.display === 'none';
+            contextDiv.style.display = isHidden ? 'block' : 'none';
+            btn.innerHTML = isHidden ? '👁️ Voir moins' : '👁️ Voir plus';
+            btn.style.background = isHidden ? '#e74c3c' : '#3498db';
         }
 
-        // ===== INTÉGRATION IA MULTI-PROVIDERS (INCHANGÉ) =====
+        // ===== INTÉGRATION IA =====
         async function generateAISummary(results, query) {
             const apiKey = document.getElementById('apiKey').value.trim();
             const provider = document.getElementById('aiProvider').value;
@@ -782,58 +673,45 @@
             }
             
             const container = document.getElementById('aiSummaryContainer');
-            container.innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    Génération du résumé avec ${aiProviders[provider].name}...
-                </div>`;
+            container.innerHTML = `<div class="loading"><div class="spinner"></div>Analyse des sources avec ${aiProviders[provider].name}...</div>`;
 
             try {
-                const extractedText = results.map(result => {
-                    const articleInfo = `Article: "${result.article.title}"${result.article.url ? `\nURL: ${result.article.url}` : ''}\n\n`;
-                    const excerpts = result.excerpts.map(excerpt => excerpt.text.trim()).join('\n\n');
-                    return articleInfo + excerpts;
-                }).slice(0, 5).join('\n\n---\n\n');
-
-                const maxTextLength = 8000;
-                const finalText = extractedText.length > maxTextLength 
-                    ? extractedText.substring(0, maxTextLength) + '\n\n[...texte tronqué...]' 
-                    : extractedText;
+                const extractedText = results.map(result => `Article: "${result.article.title}"\nURL: ${result.article.url || 'N/A'}\n\n${result.excerpts.map(e => e.text.trim()).join('\n\n')}`).slice(0, 5).join('\n\n---\n\n');
+                const finalText = extractedText.length > 8000 ? extractedText.substring(0, 8000) + '\n\n[...texte tronqué...]' : extractedText;
                 
                 let responseContent = '';
-                const endpoint = aiProviders[provider].endpoint;
-                
                 let requestBody, headers;
 
                 if (provider === 'anthropic') {
-                    headers = {
-                        "Content-Type": "application/json",
-                        "x-api-key": apiKey,
-                        "anthropic-version": "2023-06-01"
-                    };
+                    headers = { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" };
                     requestBody = {
                         model: model,
-                        max_tokens: 1000,
+                        max_tokens: 1500,
                         messages: [{
                             role: "user",
-                            content: `Tu es un assistant de recherche académique expert. Analyse les passages suivants sur le thème "${query}" et génère un résumé structuré.\n\nFormat attendu:\n**RÉSUMÉ**\n**POINTS CLÉS**\n**SUGGESTIONS BIBLIOGRAPHIQUES** (si possible)\n\nPassages:\n${finalText}`
+                            content: `Tu es un assistant de recherche académique expert. Analyse les passages suivants sur le thème "${query}" et génère un résumé structuré.\n\nFormat attendu: **RÉSUMÉ**, **POINTS CLÉS**, **SUGGESTIONS BIBLIOGRAPHIQUES**\n\nPassages:\n${finalText}`
                         }]
                     };
-                } else { // OpenAI-compatible (Groq, Together, OpenAI)
-                    headers = {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
-                    };
-                    requestBody = {
+                } else { // Format OpenAI standard (compatible avec Groq, Together, etc.)
+                    headers = { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` };
+                    const requestBody = {
                         model: model,
                         messages: [
-                            { role: "system", content: "Tu es un assistant de recherche académique expert. Sois concis et précis. Utilise le format Markdown." },
-                            { role: "user", content: `Analyse ces passages sur "${query}" et génère un résumé structuré (Résumé, Points Clés, Citations).\n\nPassages:\n${finalText}` }
-                        ]
+                            {
+                                role: "system",
+                                content: "Tu es un assistant de recherche académique expert. Analyse les passages fournis et génère un résumé structuré avec des citations. Sois concis et précis. Utilise le format : **RÉSUMÉ**, **POINTS CLÉS**, **SUGGESTIONS DE CITATIONS**."
+                            },
+                            {
+                                role: "user",
+                                content: `Recherche sur le thème : "${query}"\n\nPassages trouvés :\n${finalText}\n\nGénère un résumé académique avec suggestions de citations.`
+                            }
+                        ],
+                        temperature: 0.3,
+                        max_tokens: 1000
                     };
                 }
 
-                const response = await fetch(endpoint, {
+                const response = await fetch(aiProviders[provider].endpoint, {
                     method: "POST",
                     headers: headers,
                     body: JSON.stringify(requestBody)
@@ -845,21 +723,17 @@
                 }
 
                 const data = await response.json();
-                if (provider === 'anthropic') {
-                    responseContent = data.content[0].text;
-                } else {
-                    responseContent = data.choices[0].message.content;
-                }
+                responseContent = provider === 'anthropic' ? data.content.map(b => b.text).join('') : data.choices[0].message.content;
                 
                 container.innerHTML = `
                     <div class="groq-summary">
-                        <h3>🧠 Résumé par l'IA (${aiProviders[provider].name})</h3>
+                        <h3>🧠 Synthèse par l'IA</h3>
                         <div class="groq-content">${escapeHtml(responseContent).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}</div>
                     </div>`;
 
             } catch (error) {
                 console.error('Erreur API:', error);
-                 showMessage(container, `Erreur lors de la génération du résumé : ${error.message}`, 'error');
+                showMessage(container, `Erreur lors de la génération du résumé : ${error.message}`, 'error');
             }
         }
         
@@ -868,7 +742,6 @@
             updateApiProvider();
             displayArticles();
         });
-
     </script>
 </body>
 </html>
