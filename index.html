@@ -483,62 +483,6 @@
         }
 
         function searchInArticles(articles, query) {
-            const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 0).map(removeAccents);
-            const results = [];
-            
-            articles.forEach(article => {
-                const excerpts = [];
-                const text = article.text.toLowerCase();
-                const normalizedText = removeAccents(text);
-                
-                // Find all keyword matches in the normalized text
-                keywords.forEach(keyword => {
-                    let pos = 0;
-                    while ((pos = normalizedText.indexOf(keyword, pos)) !== -1) {
-                        // Get the original word at this position (case-sensitive)
-                        const originalWord = article.text.substr(pos, keyword.length);
-                        
-                        // Calculate context window
-                        const start = Math.max(0, pos - 150);
-                        const end = Math.min(article.text.length, pos + keyword.length + 150);
-                        
-                        // Get surrounding text (preserving original case)
-                        const context = article.text.substring(start, end);
-                        
-                        // Add to excerpts if not already covered
-                        if (!excerpts.some(e => Math.abs(e.pos - pos) < 100)) {
-                            excerpts.push({
-                                text: context,
-                                expandedText: article.text.substring(
-                                    Math.max(0, pos - 400),
-                                    Math.min(article.text.length, pos + keyword.length + 400)
-                                ),
-                                pos: pos,
-                                keyword: keyword,
-                                originalWord: originalWord
-                            });
-                        }
-                        
-                        pos += keyword.length;
-                    }
-                });
-                
-                if (excerpts.length > 0) {
-                    results.push({ article, excerpts });
-                }
-            });
-            
-            return results;
-        }
-
-        function highlightKeywords(text, query) {
-            const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 0).map(removeAccents);
-            if (keywords.length === 0) return text;
-            
-            // Create a case-insensitive regex pattern for each keyword
-            const patterns = keywords.map(kw => 
-                new RegExp(`(${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\
-        function searchInArticles(articles, query) {
             const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
             const results = [];
             articles.forEach(article => {
@@ -568,60 +512,6 @@
                 const normalizedWord = removeAccents(word.toLowerCase());
                 return keywords.some(kw => normalizedWord.startsWith(kw)) ? `<span class="highlight">${word}</span>` : word;
             });
-        }
-')})`, 'gi')
-            );
-            
-            // First normalize the text for matching
-            const normalizedText = removeAccents(text.toLowerCase());
-            
-            // Then highlight all matches while preserving original case
-            let result = text;
-            keywords.forEach((kw, i) => {
-                let pos = 0;
-                while ((pos = normalizedText.indexOf(kw, pos)) !== -1) {
-                    const originalMatch = text.substr(pos, kw.length);
-                    result = result.replace(
-                        new RegExp(`(${originalMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\
-        function searchInArticles(articles, query) {
-            const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
-            const results = [];
-            articles.forEach(article => {
-                const excerpts = [];
-                const wordRegex = /\b[\wÀ-ÿ']+\b/g;
-                let match;
-                while ((match = wordRegex.exec(article.text)) !== null) {
-                    const normalizedWord = removeAccents(match[0].toLowerCase());
-                    if (keywords.some(kw => normalizedWord.startsWith(kw))) {
-                        const matchIndex = match.index;
-                        if (!excerpts.some(e => Math.abs(e.originalIndex - matchIndex) < 100)) {
-                             const start = Math.max(0, matchIndex - 150);
-                             const end = Math.min(article.text.length, matchIndex + match[0].length + 150);
-                             excerpts.push({ text: article.text.substring(start, end), expandedText: article.text.substring(Math.max(0, matchIndex - 400), Math.min(article.text.length, matchIndex + 400)), originalIndex: matchIndex });
-                        }
-                    }
-                }
-                if (excerpts.length > 0) results.push({ article, excerpts: excerpts.slice(0, 3) });
-            });
-            return results;
-        }
-
-        function highlightKeywords(text, query) {
-            const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
-            if (keywords.length === 0) return text;
-            return text.replace(/[\wÀ-ÿ']+/g, (word) => {
-                const normalizedWord = removeAccents(word.toLowerCase());
-                return keywords.some(kw => normalizedWord.startsWith(kw)) ? `<span class="highlight">${word}</span>` : word;
-            });
-        }
-')})`, 'g'),
-                        `<span class="highlight">$1</span>`
-                    );
-                    pos += kw.length;
-                }
-            });
-            
-            return result;
         }
         
         function displaySearchResults(results, query) {
