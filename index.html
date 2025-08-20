@@ -3,658 +3,575 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mini Moteur de Recherche Académique</title>
+    <title>CTF Brute Force Tool</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            background: #0d1117;
+            color: #58a6ff;
+            margin: 0;
             padding: 20px;
+            min-height: 100vh;
         }
-
+        
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            overflow: hidden;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         }
-
-        .header {
-            background: linear-gradient(45deg, #2c3e50, #3498db);
+        
+        h1 {
+            text-align: center;
+            color: #f0f6fc;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #58a6ff;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        label {
+            color: #f0f6fc;
+            font-weight: bold;
+        }
+        
+        input, select, textarea {
+            padding: 8px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background: #0d1117;
+            color: #f0f6fc;
+            font-family: inherit;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #58a6ff;
+            box-shadow: 0 0 5px rgba(88, 166, 255, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-start {
+            background: #238636;
             color: white;
-            padding: 30px;
+        }
+        
+        .btn-start:hover {
+            background: #2ea043;
+        }
+        
+        .btn-stop {
+            background: #da3633;
+            color: white;
+        }
+        
+        .btn-stop:hover {
+            background: #f85149;
+        }
+        
+        .btn-clear {
+            background: #6f42c1;
+            color: white;
+        }
+        
+        .btn-clear:hover {
+            background: #8957e5;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.running {
+            background: rgba(35, 134, 54, 0.2);
+            border: 1px solid #238636;
+            color: #2ea043;
+        }
+        
+        .status.stopped {
+            background: rgba(218, 54, 51, 0.2);
+            border: 1px solid #da3633;
+            color: #f85149;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 10px;
             text-align: center;
         }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 300;
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #58a6ff;
         }
-
-        .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+        
+        .stat-label {
+            color: #8b949e;
+            font-size: 0.9em;
         }
-
-        .content {
-            padding: 30px;
+        
+        .target-input {
+            grid-column: 1 / -1;
         }
-
-        .section {
-            margin-bottom: 40px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 25px;
-            border-left: 4px solid #3498db;
-        }
-
-        .section h2 {
-            color: #2c3e50;
-            margin-bottom: 20px;
-            font-size: 1.8rem;
-            font-weight: 400;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #555;
-        }
-
-        .form-group input, 
-        .form-group textarea,
-        .form-group select {
+        
+        #targetElement {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .form-group input:focus, 
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-        }
-
-        .form-group textarea {
-            min-height: 120px;
+            min-height: 60px;
             resize: vertical;
         }
-
-        .btn {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
-        }
-
-        .btn:disabled {
-            background: #bdc3c7;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        .btn-danger {
-            background: linear-gradient(45deg, #e74c3c, #c0392b);
-        }
-
-        .btn-danger:hover {
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
-        }
-
-        .article-item {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .article-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-        }
-
-        .article-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 8px;
-        }
-
-        .article-url {
-            color: #3498db;
-            text-decoration: none;
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            display: block;
-            word-break: break-all;
-        }
-
-        .article-url:hover {
-            text-decoration: underline;
-        }
-
-        .article-preview {
-            color: #666;
-            font-size: 0.95rem;
-            line-height: 1.6;
-        }
-
-        .search-result {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-        }
-
-        .search-result h4 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .search-excerpt {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 6px;
-            font-style: italic;
-            line-height: 1.6;
-            border-left: 3px solid #3498db;
-            margin-top: 10px;
-        }
-
-        .highlight {
-            background: #ffd93d;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-weight: 600;
-        }
-
-        .expand-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 4px 8px;
+        
+        .log {
+            background: #0d1117;
+            border: 1px solid #30363d;
             border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            margin-left: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .expand-btn:hover {
-            background: #2980b9;
-            transform: scale(1.05);
-        }
-
-        .expanded-context {
-            background: #e8f4f8;
-            border: 1px solid #bee5eb;
-            border-radius: 6px;
             padding: 15px;
-            margin-top: 10px;
-            font-style: normal;
-            border-left: 3px solid #17a2b8;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            line-height: 1.4;
         }
-
-        .context-label {
-            font-size: 0.85rem;
-            color: #007bff;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .groq-summary {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 25px;
-            margin-top: 20px;
-        }
-
-        .groq-summary h3 {
-            color: #155724;
-            margin-bottom: 15px;
-        }
-
-        .groq-content {
-            line-height: 1.7;
-            color: #155724;
-            white-space: pre-wrap;
-        }
-        .groq-content p {
-            margin-bottom: 1em;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-        }
-
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #f5c6cb;
-            margin: 15px 0;
-        }
-
-        .success {
-            background: #d4edda;
-            color: #155724;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #c3e6cb;
-            margin: 15px 0;
-        }
-
-        .no-results {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-            padding: 30px;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 10px;
-            }
-            .content {
-                padding: 20px;
-            }
-            .header h1 {
-                font-size: 2rem;
-            }
+        
+        .current-attempt {
+            color: #f0f6fc;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🔍 Mini Moteur de Recherche Académique</h1>
-            <p>Organisez vos sources et générez des citations automatiquement</p>
+        <h1>🔓 CTF Brute Force Tool</h1>
+        
+        <div class="controls">
+            <div class="input-group">
+                <label for="charset">Jeu de caractères :</label>
+                <input type="text" id="charset" value="azertyuiopqsdfghjklmwxc" placeholder="Caractères à utiliser">
+            </div>
+            
+            <div class="input-group">
+                <label for="maxLength">Longueur max :</label>
+                <input type="number" id="maxLength" value="4" min="1" max="10">
+            </div>
+            
+            <div class="input-group">
+                <label for="delay">Délai (ms) :</label>
+                <input type="number" id="delay" value="50" min="1" max="5000">
+            </div>
+            
+            <div class="input-group">
+                <label for="method">Méthode :</label>
+                <select id="method">
+                    <option value="type">Saisie automatique</option>
+                    <option value="fill">Remplir champ</option>
+                    <option value="submit">Submit form</option>
+                </select>
+            </div>
+            
+            <div class="input-group target-input">
+                <label for="targetElement">Sélecteur CSS du champ cible :</label>
+                <textarea id="targetElement" placeholder="Ex: #password, input[type='password'], .login-field">#password</textarea>
+            </div>
         </div>
         
-        <div class="content">
-            <div class="section">
-                <h2>⚙️ Configuration API</h2>
-                <div class="form-group">
-                    <label for="aiProvider">Fournisseur d'IA :</label>
-                    <select id="aiProvider" onchange="updateApiProvider()">
-                        <option value="groq">Groq (Gratuit, Rapide)</option>
-                        <option value="openai">OpenAI (Performant)</option>
-                        <option value="anthropic">Anthropic Claude (Excellent pour l'académique)</option>
-                        <option value="together">Together AI (Modèles Open Source)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="aiModel">Modèle :</label>
-                    <select id="aiModel"></select>
-                </div>
-                <div class="form-group">
-                    <label for="apiKey">Clé API :</label>
-                    <input type="password" id="apiKey" placeholder="Collez votre clé API ici..." onchange="saveApiKey(this.value)">
-                </div>
-                <div id="apiInfo" class="form-group" style="font-size: 0.9rem; color: #666; line-height: 1.5;"></div>
+        <div class="button-group">
+            <button class="btn-start" onclick="startBruteForce()">🚀 Démarrer</button>
+            <button class="btn-stop" onclick="stopBruteForce()">⏹️ Arrêter</button>
+            <button class="btn-clear" onclick="clearLog()">🗑️ Effacer log</button>
+        </div>
+        
+        <div id="status" class="status stopped">⏸️ Arrêté</div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div id="attempts" class="stat-value">0</div>
+                <div class="stat-label">Tentatives</div>
             </div>
-
-            <div class="section">
-                <h2>📚 Ajouter un Article</h2>
-                <form id="articleForm">
-                    <div class="form-group"><label for="articleTitle">Titre de l'article :</label><input type="text" id="articleTitle" required placeholder="Ex: L'impact de l'IA sur l'éducation"></div>
-                    <div class="form-group"><label for="articleUrl">URL de la source (optionnel) :</label><input type="url" id="articleUrl" placeholder="https://exemple.com/article"></div>
-                    <div class="form-group"><label for="articleText">Texte de l'article :</label><textarea id="articleText" required placeholder="Collez ici le contenu de votre article ou étude..."></textarea></div>
-                    <button type="submit" class="btn">Ajouter l'Article</button>
-                </form>
-                <div id="addArticleMessage"></div>
+            <div class="stat-card">
+                <div id="speed" class="stat-value">0</div>
+                <div class="stat-label">Par seconde</div>
             </div>
-
-            <div class="section">
-                <h2>📖 Mes Articles (<span id="articleCount">0</span>)</h2>
-                <div id="articlesList"></div>
+            <div class="stat-card">
+                <div id="currentCombo" class="stat-value">-</div>
+                <div class="stat-label">Actuel</div>
             </div>
-
-            <div class="section">
-                <h2>🔎 Recherche</h2>
-                <div class="form-group"><label for="searchQuery">Mots-clés :</label><input type="text" id="searchQuery" placeholder="Ex: apprentissage automatique, intelligence artificielle..."></div>
-                <button id="searchBtn" class="btn">Rechercher</button>
-                <button id="searchWithGroqBtn" class="btn" style="margin-left: 10px;">Rechercher + Résumé IA</button>
-                <div id="searchResults"></div>
+            <div class="stat-card">
+                <div id="elapsed" class="stat-value">00:00</div>
+                <div class="stat-label">Temps écoulé</div>
             </div>
+        </div>
+        
+        <div class="input-group">
+            <label for="targetUrl">URL du site cible :</label>
+            <input type="text" id="targetUrl" value="https://www.google.com" placeholder="https://exemple.com">
+            <button class="btn-clear" onclick="loadTargetSite()" style="margin-top: 5px;">📡 Charger le site</button>
+        </div>
+        
+        <div id="target-frame" style="margin: 20px 0; border: 2px solid #30363d; border-radius: 8px; height: 400px; overflow: hidden;">
+            <div style="text-align: center; padding: 50px; color: #8b949e;">
+                Cliquez sur "Charger le site" pour afficher la page cible ici
+            </div>
+        </div>
+        
+        <div class="log" id="log">
+            <div class="current-attempt">Prêt à démarrer le brute force...</div>
+            <div>Configuration de l'outil et sélection du champ cible nécessaires.</div>
         </div>
     </div>
 
     <script>
-        // ===== FONCTIONS UTILITAIRES =====
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>"']/g, match => ({'&': '&amp;','<': '&lt;','>': '&gt;','"': '&quot;',"'": '&#39;'}[match]));
+        let isRunning = false;
+        let currentTimeout;
+        let attempts = 0;
+        let startTime;
+        let currentIndex = [];
+        let charset = [];
+        let maxLength = 4;
+        
+        function generateCombinations(charset, maxLen) {
+            const combinations = [];
+            
+            function generate(current, len) {
+                if (len === 0) {
+                    combinations.push(current);
+                    return;
+                }
+                
+                for (let char of charset) {
+                    generate(current + char, len - 1);
+                }
+            }
+            
+            for (let len = 1; len <= maxLen; len++) {
+                generate('', len);
+            }
+            
+            return combinations;
         }
         
-        function showMessage(element, message, type) {
-            const container = element.querySelector('.error-message-container') || document.createElement('div');
-            container.className = 'error-message-container';
-            container.innerHTML = `<div class="${type}">${escapeHtml(message)}</div>`;
-            if (!element.contains(container)) {
-                 element.prepend(container);
-            }
-        }
-
-        function removeAccents(str) {
-            if (!str) return '';
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        }
-
-        // ===== GESTION DES FOURNISSEURS D'IA (INCHANGÉ) =====
-        const aiProviders = {
-            groq: { name: 'Groq', endpoint: 'https://api.groq.com/openai/v1/chat/completions', models: ['llama-3.3-70b-versatile', 'llama3-70b-8192', 'llama-3.1-8b-instant'], info: '🚀 <strong>Groq :</strong> API gratuite très rapide. <a href="https://console.groq.com" target="_blank">Obtenir une clé</a>.' },
-            openai: { name: 'OpenAI', endpoint: 'https://api.openai.com/v1/chat/completions', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'], info: '🧠 <strong>OpenAI :</strong> Modèles GPT très performants (payant). <a href="https://platform.openai.com" target="_blank">Obtenir une clé</a>.' },
-            anthropic: { name: 'Anthropic', endpoint: 'https://api.anthropic.com/v1/messages', models: ['claude-3-5-sonnet-20240620', 'claude-3-opus-20240229'], info: '🎓 <strong>Anthropic :</strong> Claude excelle en recherche académique (payant). <a href="https://console.anthropic.com" target="_blank">Obtenir une clé</a>.' },
-            together: { name: 'Together AI', endpoint: 'https://api.together.xyz/v1/chat/completions', models: ['meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo', 'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo'], info: '🔓 <strong>Together AI :</strong> Modèles open source performants (payant). <a href="https://api.together.xyz" target="_blank">Obtenir une clé</a>.' }
-        };
-
-        function updateApiProvider() {
-            const provider = document.getElementById('aiProvider').value;
-            const modelSelect = document.getElementById('aiModel');
-            const infoDiv = document.getElementById('apiInfo');
-            modelSelect.innerHTML = '';
-            aiProviders[provider].models.forEach(model => {
-                const option = document.createElement('option');
-                option.value = model; option.textContent = model;
-                modelSelect.appendChild(option);
-            });
-            infoDiv.innerHTML = aiProviders[provider].info;
-            loadApiKey();
+        function updateStats() {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const speed = Math.round(attempts / elapsed);
+            
+            document.getElementById('attempts').textContent = attempts;
+            document.getElementById('speed').textContent = speed || 0;
+            document.getElementById('elapsed').textContent = formatTime(elapsed);
         }
         
-        // ===== GESTION DES DONNÉES (INCHANGÉ) =====
-        let articlesData = [];
-        function saveArticles() { try { localStorage.setItem('academic_articles', JSON.stringify(articlesData)); } catch (e) { console.error('Sauvegarde impossible:', e); } }
-        function loadArticles() { try { const saved = localStorage.getItem('academic_articles'); if (saved) { articlesData = JSON.parse(saved); } } catch (e) { console.error('Erreur chargement:', e); localStorage.removeItem('academic_articles'); } return articlesData; }
-        function saveApiKey(key) { const provider = document.getElementById('aiProvider').value; try { localStorage.setItem(`api_key_${provider}`, key); } catch (e) { console.error('Sauvegarde clé API impossible'); } }
-        function loadApiKey() { const provider = document.getElementById('aiProvider').value; try { const saved = localStorage.getItem(`api_key_${provider}`); document.getElementById('apiKey').value = saved || ''; } catch (e) { console.error('Chargement clé API impossible'); } }
-
-        // ===== GESTION DES ARTICLES (INCHANGÉ) =====
-        const articleForm = document.getElementById('articleForm');
-        const articlesList = document.getElementById('articlesList');
-        const articleCount = document.getElementById('articleCount');
-        const addArticleMessage = document.getElementById('addArticleMessage');
-
-        articleForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const title = document.getElementById('articleTitle').value.trim();
-            const url = document.getElementById('articleUrl').value.trim();
-            const text = document.getElementById('articleText').value.trim();
-            if (!title || !text) { showMessage(addArticleMessage, "Veuillez remplir le titre et le texte.", 'error'); return; }
-            articlesData.push({ id: Date.now(), title, url, text, dateAdded: new Date().toLocaleDateString('fr-FR') });
-            saveArticles(); displayArticles(); articleForm.reset();
-            showMessage(addArticleMessage, 'Article ajouté avec succès !', 'success');
-        });
-
-        function displayArticles() {
-            const articles = loadArticles();
-            articleCount.textContent = articles.length;
-            articlesList.innerHTML = articles.length === 0 ? '<div class="no-results">Aucun article ajouté.</div>' : articles.map(article => `
-                <div class="article-item">
-                    <div class="article-title">${escapeHtml(article.title)}</div>
-                    ${article.url ? `<a href="${escapeHtml(article.url)}" class="article-url" target="_blank">${escapeHtml(article.url)}</a>` : ''}
-                    <div class="article-preview">${escapeHtml(article.text.substring(0, 200))}...</div>
-                    <div style="margin-top: 10px; font-size: 0.85rem; color: #999;">Ajouté le ${article.dateAdded}</div>
-                    <button onclick="deleteArticle(${article.id})" class="btn btn-danger" style="font-size: 0.85rem; padding: 8px 15px; margin-top: 10px;">Supprimer</button>
-                </div>`).join('');
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
-
-        function deleteArticle(id) {
-            if (confirm('Êtes-vous sûr ?')) {
-                articlesData = articlesData.filter(article => article.id !== id);
-                saveArticles(); displayArticles();
+        
+        function log(message, isAttempt = false) {
+            const logDiv = document.getElementById('log');
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            if (isAttempt) div.className = 'current-attempt';
+            
+            logDiv.appendChild(div);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Garder seulement les 50 derniers logs
+            while (logDiv.children.length > 50) {
+                logDiv.removeChild(logDiv.firstChild);
             }
         }
-
-        // ===== FONCTIONS DE RECHERCHE (INCHANGÉ) =====
-        const searchQuery = document.getElementById('searchQuery');
-        const searchBtn = document.getElementById('searchBtn');
-        const searchWithGroqBtn = document.getElementById('searchWithGroqBtn');
-        const searchResults = document.getElementById('searchResults');
-
-        searchBtn.addEventListener('click', () => performSearch(false));
-        searchWithGroqBtn.addEventListener('click', () => performSearch(true));
-        searchQuery.addEventListener('keypress', e => { if (e.key === 'Enter') performSearch(false); });
-
-        function performSearch(useAI) {
-            const query = searchQuery.value.trim();
-            if (!query) { showMessage(searchResults, 'Veuillez saisir des mots-clés.', 'error'); return; }
-            const articles = loadArticles();
-            if (articles.length === 0) { showMessage(searchResults, 'Aucun article disponible.', 'error'); return; }
-            const results = searchInArticles(articles, query);
-            displaySearchResults(results, query);
-            if (useAI && results.length > 0) {
-                generateAISummary(results, query);
+        
+        function loadTargetSite() {
+            const url = document.getElementById('targetUrl').value;
+            const frameContainer = document.getElementById('target-frame');
+            
+            if (!url) {
+                alert('Veuillez entrer une URL');
+                return;
             }
+            
+            log(`Chargement du site: ${url}`);
+            
+            frameContainer.innerHTML = `
+                <iframe 
+                    id="target-iframe" 
+                    src="${url}" 
+                    style="width: 100%; height: 100%; border: none;"
+                    sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                ></iframe>
+            `;
+            
+            // Attendre le chargement
+            const iframe = document.getElementById('target-iframe');
+            iframe.onload = function() {
+                log('✅ Site chargé avec succès');
+                log('ℹ️ Vous pouvez maintenant tester directement dans la frame ci-dessus');
+            };
+            
+            iframe.onerror = function() {
+                log('❌ Erreur de chargement - Le site bloque peut-être les iframes');
+                frameContainer.innerHTML = `
+                    <div style="text-align: center; padding: 50px; color: #f85149;">
+                        <div>❌ Impossible de charger le site</div>
+                        <div style="margin-top: 10px; font-size: 0.9em;">
+                            Le site bloque les iframes. Utilisez la méthode onglet séparé.
+                        </div>
+                        <button onclick="openInNewTab()" style="
+                            margin-top: 15px;
+                            padding: 8px 16px;
+                            background: #58a6ff;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        ">Ouvrir dans un nouvel onglet</button>
+                    </div>
+                `;
+            };
         }
-
-        function searchInArticles(articles, query) {
-            const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
-            const results = [];
-            articles.forEach(article => {
-                const excerpts = [];
-                const wordRegex = /\b[\wÀ-ÿ']+\b/g;
-                let match;
-                while ((match = wordRegex.exec(article.text)) !== null) {
-                    const normalizedWord = removeAccents(match[0].toLowerCase());
-                    if (keywords.some(kw => normalizedWord.startsWith(kw))) {
-                        const matchIndex = match.index;
-                        if (!excerpts.some(e => Math.abs(e.originalIndex - matchIndex) < 100)) {
-                             const start = Math.max(0, matchIndex - 150);
-                             const end = Math.min(article.text.length, matchIndex + match[0].length + 150);
-                             excerpts.push({ text: article.text.substring(start, end), expandedText: article.text.substring(Math.max(0, matchIndex - 400), Math.min(article.text.length, matchIndex + 400)), originalIndex: matchIndex });
+        
+        function openInNewTab() {
+            const url = document.getElementById('targetUrl').value;
+            window.open(url, '_blank');
+            log(`Ouverture de ${url} dans un nouvel onglet`);
+            log('ℹ️ Revenez sur cet onglet pour lancer l\'attaque');
+        }
+        
+        async function tryPassword(password) {
+            const targetSelector = document.getElementById('targetElement').value;
+            const method = document.getElementById('method').value;
+            
+            try {
+                let targetElement;
+                
+                // Essayer d'abord dans l'iframe intégrée
+                const iframe = document.getElementById('target-iframe');
+                if (iframe) {
+                    try {
+                        targetElement = iframe.contentDocument?.querySelector(targetSelector);
+                        if (targetElement) {
+                            log(`✅ Élément trouvé dans l'iframe: ${targetSelector}`);
+                        }
+                    } catch (e) {
+                        log(`⚠️ Accès iframe bloqué (CORS): ${e.message}`);
+                    }
+                }
+                
+                // Si pas trouvé dans l'iframe, essayer dans la page actuelle
+                if (!targetElement) {
+                    targetElement = document.querySelector(targetSelector);
+                    if (targetElement) {
+                        log(`✅ Élément trouvé dans la page actuelle: ${targetSelector}`);
+                    }
+                }
+                
+                // Si toujours pas trouvé, essayer dans les autres iframes
+                if (!targetElement) {
+                    const iframes = document.querySelectorAll('iframe');
+                    for (let frame of iframes) {
+                        try {
+                            targetElement = frame.contentDocument?.querySelector(targetSelector);
+                            if (targetElement) {
+                                log(`✅ Élément trouvé dans une iframe: ${targetSelector}`);
+                                break;
+                            }
+                        } catch (e) {
+                            // Ignorer les erreurs CORS
                         }
                     }
                 }
-                if (excerpts.length > 0) results.push({ article, excerpts: excerpts.slice(0, 3) });
-            });
-            return results;
-        }
-
-        function highlightKeywords(text, query) {
-            const keywords = query.toLowerCase().split(/\s+/).filter(k => k.length > 2).map(removeAccents);
-            if (keywords.length === 0) return text;
-            return text.replace(/[\wÀ-ÿ']+/g, (word) => {
-                const normalizedWord = removeAccents(word.toLowerCase());
-                return keywords.some(kw => normalizedWord.startsWith(kw)) ? `<span class="highlight">${word}</span>` : word;
-            });
-        }
-        
-        function displaySearchResults(results, query) {
-            if (results.length === 0) { searchResults.innerHTML = '<div class="no-results">Aucun résultat trouvé.</div>'; return; }
-            searchResults.innerHTML = `<h3>Résultats (${results.length} article(s)) :</h3>` + results.map((result, rIdx) => `
-                <div class="search-result">
-                    <h4>${escapeHtml(result.article.title)}</h4>
-                    ${result.article.url ? `<a href="${escapeHtml(result.article.url)}" target="_blank">${escapeHtml(result.article.url)}</a>` : ''}
-                    ${result.excerpts.map((excerpt, eIdx) => `
-                        <div class="search-excerpt">
-                            ...${highlightKeywords(escapeHtml(excerpt.text), query)}...
-                            <button class="expand-btn" onclick="toggleContext('excerpt_${rIdx}_${eIdx}', this)">👁️ Voir plus</button>
-                            <div id="excerpt_${rIdx}_${eIdx}" class="expanded-context" style="display: none;">
-                                <div class="context-label">Contexte élargi :</div>...${highlightKeywords(escapeHtml(excerpt.expandedText), query)}...
-                            </div>
-                        </div>`).join('')}
-                </div>`).join('');
-        }
-
-        function toggleContext(excerptId, btn) {
-            const contextDiv = document.getElementById(excerptId);
-            const isHidden = contextDiv.style.display === 'none';
-            contextDiv.style.display = isHidden ? 'block' : 'none';
-            btn.innerHTML = isHidden ? '👁️ Voir moins' : '👁️ Voir plus';
-            btn.style.background = isHidden ? '#e74c3c' : '#3498db';
-        }
-
-        // ===== INTÉGRATION IA (RESTAURÉE ET CORRIGÉE) =====
-        async function generateAISummary(results, query) {
-            const container = document.getElementById('searchResults');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'loading';
-            loadingDiv.innerHTML = `<div class="spinner"></div>Analyse par ${aiProviders[document.getElementById('aiProvider').value].name}...`;
-            container.appendChild(loadingDiv);
-
-            const apiKey = document.getElementById('apiKey').value.trim();
-            const provider = document.getElementById('aiProvider').value;
-            const model = document.getElementById('aiModel').value;
-
-            try {
-                // Préparer le texte (limiter la taille) - LOGIQUE D'ORIGINE RESTAURÉE
-                const extractedText = results.map(result => {
-                    const articleInfo = `Article: "${result.article.title}"${result.article.url ? `\nURL: ${result.article.url}` : ''}\n\n`;
-                    const excerpts = result.excerpts
-                        .map(excerpt => excerpt.text.trim())
-                        .slice(0, 2)
-                        .join('\n\n');
-                    return articleInfo + excerpts;
-                }).slice(0, 3)
-                .join('\n\n---\n\n');
-
-                const maxTextLength = provider === 'anthropic' ? 6000 : 8000;
-                const finalText = extractedText.length > maxTextLength
-                    ? extractedText.substring(0, maxTextLength) + '\n\n[...texte tronqué...]'
-                    : extractedText;
-
-                let response;
-
-                if (provider === 'anthropic') {
-                    // Format spécial pour Anthropic
-                    response = await fetch(aiProviders[provider].endpoint, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-                        body: JSON.stringify({
-                            model: model,
-                            max_tokens: 1000,
-                            messages: [{
-                                role: "user",
-                                content: `Tu es un assistant de recherche académique expert. Analyse les passages suivants sur le thème "${query}" et génère un résumé structuré avec suggestions de citations.\n\nFormat attendu: **RÉSUMÉ**, **POINTS CLÉS**, **SUGGESTIONS BIBLIOGRAPHIQUES**\n\nPassages:\n${finalText}`
-                            }]
-                        })
-                    });
-                } else {
-                    // Format OpenAI standard (compatible avec Groq, Together, etc.) - PROMPT D'ORIGINE RESTAURÉ
-                    const requestBody = {
-                        model: model,
-                        messages: [
-                            { role: "system", content: "Tu es un assistant de recherche académique expert. Analyse les passages fournis et génère un résumé structuré avec des citations. Sois concis et précis. Utilise le format : **RÉSUMÉ**, **POINTS CLÉS**, **SUGGESTIONS DE CITATIONS**." },
-                            { role: "user", content: `Recherche sur le thème : "${query}"\n\nPassages trouvés :\n${finalText}\n\nGénère un résumé académique avec suggestions de citations.` }
-                        ],
-                        temperature: 0.3,
-                        max_tokens: 1000
-                    };
-                    response = await fetch(aiProviders[provider].endpoint, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                        body: JSON.stringify(requestBody),
-                    });
+                
+                // Dernière tentative : essayer d'accéder aux autres onglets (généralement bloqué)
+                if (!targetElement) {
+                    // Méthode alternative : utiliser postMessage si possible
+                    log(`❌ Élément cible non trouvé: ${targetSelector}`);
+                    log(`💡 Suggestions:`);
+                    log(`   - Vérifiez que le sélecteur CSS est correct`);
+                    log(`   - Le site bloque peut-être les iframes (CORS)`);
+                    log(`   - Essayez d'ouvrir le site dans un nouvel onglet et utilisez la console`);
+                    return false;
                 }
                 
-                // *** BUG CORRIGÉ ICI ***
-                // On vérifie si la réponse est OK AVANT de tenter de la lire en JSON.
-                if (!response.ok) {
-                    const errorText = await response.text(); // Lire en texte pour avoir plus de détails
-                    throw new Error(`(${response.status}) ${errorText}`);
+                // Appliquer la méthode choisie
+                switch (method) {
+                    case 'type':
+                        // Simulation de frappe
+                        targetElement.focus();
+                        targetElement.value = '';
+                        
+                        for (let char of password) {
+                            targetElement.value += char;
+                            targetElement.dispatchEvent(new Event('input', { bubbles: true }));
+                            await new Promise(resolve => setTimeout(resolve, 20));
+                        }
+                        
+                        targetElement.dispatchEvent(new Event('change', { bubbles: true }));
+                        break;
+                        
+                    case 'fill':
+                        targetElement.focus();
+                        targetElement.value = password;
+                        targetElement.dispatchEvent(new Event('input', { bubbles: true }));
+                        targetElement.dispatchEvent(new Event('change', { bubbles: true }));
+                        break;
+                        
+                    case 'submit':
+                        targetElement.focus();
+                        targetElement.value = password;
+                        targetElement.dispatchEvent(new Event('input', { bubbles: true }));
+                        
+                        // Chercher et soumettre le formulaire
+                        const form = targetElement.closest('form');
+                        if (form) {
+                            const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+                            if (submitBtn) {
+                                submitBtn.click();
+                            } else {
+                                form.dispatchEvent(new Event('submit', { bubbles: true }));
+                            }
+                        } else {
+                            // Essayer avec Entrée
+                            targetElement.dispatchEvent(new KeyboardEvent('keydown', { 
+                                key: 'Enter', 
+                                bubbles: true 
+                            }));
+                        }
+                        break;
                 }
-
-                const responseData = await response.json();
-                loadingDiv.remove();
-
-                // Extraire le contenu selon le provider
-                let summary = provider === 'anthropic'
-                    ? responseData.content?.[0]?.text
-                    : responseData.choices?.[0]?.message?.content;
                 
-                if (!summary) {
-                    throw new Error('Réponse API invalide : pas de contenu trouvé.');
-                }
-
-                // Afficher le résumé
-                const summaryDiv = document.createElement('div');
-                summaryDiv.className = 'groq-summary';
-                summaryDiv.innerHTML = `<h3>🤖 Résumé généré par ${aiProviders[provider].name}</h3><div class="groq-content">${formatAIResponse(summary)}</div>`;
-                container.appendChild(summaryDiv);
-
+                log(`🔍 Test effectué: "${password}"`);
+                return true;
+                
             } catch (error) {
-                loadingDiv.remove();
-                console.error('Erreur IA:', error);
-                let userMessage = `Erreur avec ${aiProviders[provider].name}: `;
-                if (error.message.includes('401')) { userMessage += 'Clé API invalide ou manquante.'; } 
-                else if (error.message.includes('429')) { userMessage += 'Trop de requêtes. Attendez un moment.'; } 
-                else { userMessage += error.message; }
-                showMessage(container, userMessage, 'error');
+                log(`❌ Erreur lors de la tentative "${password}": ${error.message}`);
+                return false;
             }
         }
-
-        // NOUVELLE FONCTION D'AFFICHAGE FOURNIE
-        function formatAIResponse(text) {
-            // Remplace les **gras**, puis les sauts de ligne par des paragraphes
-            return escapeHtml(text)
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n/g, '<br>') // Gère les sauts de ligne simples
-                .replace(/^/, '<p>')
-                .replace(/$/, '</p>')
-                 // Nettoyage au cas où des paragraphes vides sont créés
-                .replace(/<p><\/p>/g, '');
+        
+        async function startBruteForce() {
+            if (isRunning) return;
+            
+            charset = document.getElementById('charset').value.split('');
+            maxLength = parseInt(document.getElementById('maxLength').value);
+            const delay = parseInt(document.getElementById('delay').value);
+            
+            if (charset.length === 0) {
+                alert('Veuillez spécifier un jeu de caractères');
+                return;
+            }
+            
+            isRunning = true;
+            attempts = 0;
+            startTime = Date.now();
+            
+            document.getElementById('status').textContent = '🚀 En cours...';
+            document.getElementById('status').className = 'status running';
+            
+            log('Démarrage du brute force...');
+            log(`Charset: ${charset.join('')}, Longueur max: ${maxLength}, Délai: ${delay}ms`);
+            
+            const combinations = generateCombinations(charset, maxLength);
+            log(`${combinations.length} combinaisons à tester`);
+            
+            for (let i = 0; i < combinations.length && isRunning; i++) {
+                const password = combinations[i];
+                attempts++;
+                
+                document.getElementById('currentCombo').textContent = password;
+                updateStats();
+                
+                log(`Tentative ${attempts}: "${password}"`, true);
+                
+                const success = await tryPassword(password);
+                if (success) {
+                    // Vérifier le résultat (à personnaliser selon le CTF)
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+            
+            if (isRunning) {
+                stopBruteForce();
+                log('🏁 Brute force terminé - Toutes les combinaisons testées');
+            }
         }
         
-        // Initialisation de la page
-        document.addEventListener('DOMContentLoaded', () => {
-            updateApiProvider();
-            displayArticles();
+        function stopBruteForce() {
+            if (!isRunning) return;
+            
+            isRunning = false;
+            if (currentTimeout) clearTimeout(currentTimeout);
+            
+            document.getElementById('status').textContent = '⏹️ Arrêté';
+            document.getElementById('status').className = 'status stopped';
+            
+            log('🛑 Brute force arrêté par l\'utilisateur');
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '<div class="current-attempt">Log effacé - Prêt pour une nouvelle session</div>';
+        }
+        
+        // Mise à jour des stats toutes les secondes
+        setInterval(() => {
+            if (isRunning) updateStats();
+        }, 1000);
+        
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'Enter':
+                        e.preventDefault();
+                        if (isRunning) stopBruteForce();
+                        else startBruteForce();
+                        break;
+                    case 'r':
+                        e.preventDefault();
+                        clearLog();
+                        break;
+                }
+            }
         });
     </script>
 </body>
